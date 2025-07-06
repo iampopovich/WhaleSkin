@@ -84,38 +84,39 @@ class ChatAdapter extends TypeAdapter<Chat> {
 // **************************************************************************
 
 Chat _$ChatFromJson(Map<String, dynamic> json) => Chat(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      lastMessageAt: DateTime.parse(json['lastMessageAt'] as String),
-      isPinned: json['isPinned'] as bool? ?? false,
-      systemPrompt: json['systemPrompt'] as String?,
-      temperature: (json['temperature'] as num?)?.toDouble() ?? 1.0,
-      maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 2048,
-      stopSequences: (json['stopSequences'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble() ?? 0.0,
-      presencePenalty: (json['presencePenalty'] as num?)?.toDouble() ?? 0.0,
-      topP: (json['topP'] as num?)?.toDouble() ?? 1.0,
-      useDeepThink: json['useDeepThink'] as bool? ?? false,
-      useWebSearch: json['useWebSearch'] as bool? ?? false,
-    );
+  id: json['id'] as String,
+  title: json['title'] as String,
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  lastMessageAt: DateTime.parse(json['lastMessageAt'] as String),
+  isPinned: json['isPinned'] as bool? ?? false,
+  systemPrompt: json['systemPrompt'] as String?,
+  temperature: (json['temperature'] as num?)?.toDouble() ?? 1.0,
+  maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 2048,
+  stopSequences:
+      (json['stopSequences'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble() ?? 0.0,
+  presencePenalty: (json['presencePenalty'] as num?)?.toDouble() ?? 0.0,
+  topP: (json['topP'] as num?)?.toDouble() ?? 1.0,
+  useDeepThink: json['useDeepThink'] as bool? ?? false,
+  useWebSearch: json['useWebSearch'] as bool? ?? false,
+);
 
 Map<String, dynamic> _$ChatToJson(Chat instance) => <String, dynamic>{
-      'id': instance.id,
-      'title': instance.title,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'lastMessageAt': instance.lastMessageAt.toIso8601String(),
-      'isPinned': instance.isPinned,
-      'systemPrompt': instance.systemPrompt,
-      'temperature': instance.temperature,
-      'maxTokens': instance.maxTokens,
-      'stopSequences': instance.stopSequences,
-      'frequencyPenalty': instance.frequencyPenalty,
-      'presencePenalty': instance.presencePenalty,
-      'topP': instance.topP,
-      'useDeepThink': instance.useDeepThink,
-      'useWebSearch': instance.useWebSearch,
-    };
+  'id': instance.id,
+  'title': instance.title,
+  'createdAt': instance.createdAt.toIso8601String(),
+  'lastMessageAt': instance.lastMessageAt.toIso8601String(),
+  'isPinned': instance.isPinned,
+  'systemPrompt': instance.systemPrompt,
+  'temperature': instance.temperature,
+  'maxTokens': instance.maxTokens,
+  'stopSequences': instance.stopSequences,
+  'frequencyPenalty': instance.frequencyPenalty,
+  'presencePenalty': instance.presencePenalty,
+  'topP': instance.topP,
+  'useDeepThink': instance.useDeepThink,
+  'useWebSearch': instance.useWebSearch,
+};

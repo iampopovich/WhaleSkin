@@ -1,0 +1,54 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'windows/**'
+      - 'pubspec.yaml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'windows/**'
+      - 'pubspec.yaml'
+
+jobs:
+  build_windows:
+    name: Build Windows Desktop
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate code
+        run: flutter packages pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build Windows app
+        run: flutter build windows --release
+
+      - name: Create Windows archive
+        run: |
+          cd build/windows/x64/runner/Release
+          7z a ../../../../../whaleskin-windows-x64.zip *
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: whaleskin-windows-x64.zip
+          retention-days: 30

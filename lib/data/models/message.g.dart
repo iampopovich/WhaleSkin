@@ -57,17 +57,17 @@ class MessageAdapter extends TypeAdapter<Message> {
 // **************************************************************************
 
 Message _$MessageFromJson(Map<String, dynamic> json) => Message(
-      id: json['id'] as String,
-      content: json['content'] as String,
-      role: json['role'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      chatId: json['chatId'] as String,
-    );
+  id: json['id'] as String,
+  content: json['content'] as String,
+  role: json['role'] as String,
+  timestamp: DateTime.parse(json['timestamp'] as String),
+  chatId: json['chatId'] as String,
+);
 
 Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
-      'id': instance.id,
-      'content': instance.content,
-      'role': instance.role,
-      'timestamp': instance.timestamp.toIso8601String(),
-      'chatId': instance.chatId,
-    };
+  'id': instance.id,
+  'content': instance.content,
+  'role': instance.role,
+  'timestamp': instance.timestamp.toIso8601String(),
+  'chatId': instance.chatId,
+};

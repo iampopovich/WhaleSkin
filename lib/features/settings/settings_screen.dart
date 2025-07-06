@@ -450,10 +450,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              navigator.pop();
               await StorageService.clearAllData();
               if (mounted) {
-                Navigator.of(context).pushReplacementNamed('/api-key');
+                navigator.pushReplacementNamed('/api-key');
               }
             },
             style: ElevatedButton.styleFrom(

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/chat.dart';
 import '../models/message.dart';
@@ -162,7 +163,7 @@ class ChatRepository {
             final renamedChat = updatedChat.copyWith(title: newTitle);
             await StorageService.saveChat(renamedChat);
           } catch (e) {
-            print('Failed to generate chat title: $e');
+            debugPrint('Failed to generate chat title: $e');
           }
         }
       }
@@ -329,7 +330,7 @@ class ChatRepository {
         return title.isNotEmpty ? title : 'Новый чат';
       }
     } catch (e) {
-      print('Error generating title: $e');
+      debugPrint('Error generating title: $e');
     }
 
     return 'Новый чат';

@@ -2,18 +2,18 @@ name: Build Web
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'web/**'
-      - 'pubspec.yaml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'web/**'
-      - 'pubspec.yaml'
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'web/**'
+  #     - 'pubspec.yaml'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'web/**'
+  #     - 'pubspec.yaml'
 
 jobs:
   build_web:

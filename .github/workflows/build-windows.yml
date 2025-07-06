@@ -2,18 +2,18 @@ name: Build Windows
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'windows/**'
-      - 'pubspec.yaml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'windows/**'
-      - 'pubspec.yaml'
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'windows/**'
+  #     - 'pubspec.yaml'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'windows/**'
+  #     - 'pubspec.yaml'
 
 jobs:
   build_windows:

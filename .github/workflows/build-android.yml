@@ -2,18 +2,18 @@ name: Build Android
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'android/**'
-      - 'pubspec.yaml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'android/**'
-      - 'pubspec.yaml'
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'android/**'
+  #     - 'pubspec.yaml'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'android/**'
+  #     - 'pubspec.yaml'
 
 jobs:
   build_android:

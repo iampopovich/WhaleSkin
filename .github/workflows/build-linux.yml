@@ -2,18 +2,18 @@ name: Build Linux
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'linux/**'
-      - 'pubspec.yaml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'linux/**'
-      - 'pubspec.yaml'
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'linux/**'
+  #     - 'pubspec.yaml'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'lib/**'
+  #     - 'linux/**'
+  #     - 'pubspec.yaml'
 
 jobs:
   build_linux:

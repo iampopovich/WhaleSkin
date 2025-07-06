@@ -2,19 +2,19 @@ name: Build All Platforms
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
 
 jobs:
   # Этот воркфлоу координирует сборку всех платформ
   # Для отдельной сборки используйте специализированные воркфлоу:
   # - build-android.yml
-  # - build-windows.yml  
+  # - build-windows.yml
   # - build-linux.yml
   # - build-web.yml
-  
+
   info:
     name: Build Information
     runs-on: ubuntu-latest

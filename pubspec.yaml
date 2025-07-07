@@ -57,6 +57,10 @@ dependencies:
   # File path utilities
   path_provider: ^2.1.1
 
+  # Chat UI Kit
+  flutter_chat_core: ^2.0.0
+  flutter_chat_ui: ^2.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

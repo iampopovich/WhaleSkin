@@ -328,15 +328,24 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Row(
             children: [
-              Text(
-                state.selectedChat?.title ?? 'Чат',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    if (state.selectedChat != null) {
+                      _showRenameChatDialog(context, state.selectedChat!);
+                    }
+                  },
+                  child: Text(
+                    state.selectedChat?.title ?? 'Чат',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, color: Color(0xFF94A3B8)),
                 onSelected: (action) {
@@ -515,15 +524,29 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showChatSettings(BuildContext context, app_chat.Chat chat) {
     showDialog(
       context: context,
-      builder: (context) => _ChatSettingsDialog(chat: chat),
+      builder: (context) => _ChatSettingsDialog(
+        chat: chat,
+        chatBloc: this.context.read<ChatBloc>(),
+      ),
+    );
+  }
+
+  void _showRenameChatDialog(BuildContext context, app_chat.Chat chat) {
+    showDialog(
+      context: context,
+      builder: (context) => _RenameChatDialog(
+        chat: chat,
+        chatBloc: this.context.read<ChatBloc>(),
+      ),
     );
   }
 }
 
 class _ChatSettingsDialog extends StatefulWidget {
   final app_chat.Chat chat;
+  final ChatBloc chatBloc;
 
-  const _ChatSettingsDialog({required this.chat});
+  const _ChatSettingsDialog({required this.chat, required this.chatBloc});
 
   @override
   State<_ChatSettingsDialog> createState() => _ChatSettingsDialogState();
@@ -685,7 +708,7 @@ class _ChatSettingsDialogState extends State<_ChatSettingsDialog> {
         TextButton(
           onPressed: () {
             // Сохраняем настройки
-            context.read<ChatBloc>().add(
+            widget.chatBloc.add(
               UpdateChatSettings(widget.chat.id, {
                 'useDeepThink': _useDeepThink,
                 'useWebSearch': _useWebSearch,
@@ -703,5 +726,88 @@ class _ChatSettingsDialogState extends State<_ChatSettingsDialog> {
         ),
       ],
     );
+  }
+}
+
+class _RenameChatDialog extends StatefulWidget {
+  final app_chat.Chat chat;
+  final ChatBloc chatBloc;
+
+  const _RenameChatDialog({required this.chat, required this.chatBloc});
+
+  @override
+  State<_RenameChatDialog> createState() => _RenameChatDialogState();
+}
+
+class _RenameChatDialogState extends State<_RenameChatDialog> {
+  late TextEditingController _titleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.chat.title);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF2A2A3A),
+      title: const Text(
+        'Переименовать чат',
+        style: TextStyle(color: Colors.white),
+      ),
+      content: Container(
+        width: 300,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E2E),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF3A3A4A)),
+        ),
+        child: TextField(
+          controller: _titleController,
+          style: const TextStyle(color: Colors.white),
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Введите новое название чата...',
+            hintStyle: TextStyle(color: Color(0xFF64748B)),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.all(12),
+          ),
+          onSubmitted: (_) => _saveTitle(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text(
+            'Отмена',
+            style: TextStyle(color: Color(0xFF94A3B8)),
+          ),
+        ),
+        TextButton(
+          onPressed: _saveTitle,
+          child: const Text(
+            'Сохранить',
+            style: TextStyle(color: Color(0xFF4F9CF9)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _saveTitle() {
+    final newTitle = _titleController.text.trim();
+    if (newTitle.isNotEmpty && newTitle != widget.chat.title) {
+      widget.chatBloc.add(RenameChat(widget.chat.id, newTitle));
+    }
+    Navigator.of(context).pop();
   }
 }

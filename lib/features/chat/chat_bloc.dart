@@ -292,6 +292,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         temperature: currentState.selectedChat!.temperature,
         maxTokens: currentState.selectedChat!.maxTokens,
         useDeepThink: currentState.selectedChat!.useDeepThink,
+        useWebSearch: currentState.selectedChat!.useWebSearch,
       );
 
       // Получаем обновленные сообщения (включая ответ ИИ)

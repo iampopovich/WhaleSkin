@@ -136,7 +136,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Пожалуйста, введите API ключ';
                               }
-                              if (!value.startsWith('sk-')) {
+                              if (!value.trim().startsWith('sk-')) {
                                 return 'API ключ должен начинаться с "sk-"';
                               }
                               return null;

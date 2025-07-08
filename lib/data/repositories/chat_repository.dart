@@ -97,12 +97,27 @@ class ChatRepository {
     double? temperature,
     int? maxTokens,
     bool? useDeepThink,
+    bool? useWebSearch,
   }) async {
     if (!_isInitialized) {
       throw Exception('Repository not initialized');
     }
 
-    // Сохраняем сообщение пользователя
+    // Получаем текущую историю сообщений для контекста
+    final existingMessages = getMessagesForChat(chatId);
+
+    // Создаем новое сообщение пользователя для API
+    final newUserMessage = {'role': 'user', 'content': content};
+
+    // Формируем полную историю для API
+    final apiMessages = [
+      ...existingMessages.map(
+        (msg) => {'role': msg.role, 'content': msg.content},
+      ),
+      newUserMessage,
+    ];
+
+    // Сохраняем сообщение пользователя в локальной базе
     final userMessageId = DateTime.now().millisecondsSinceEpoch.toString();
     final userMessage = Message.user(
       id: userMessageId,
@@ -111,19 +126,13 @@ class ChatRepository {
     );
     await StorageService.saveMessage(userMessage);
 
-    // Получаем историю сообщений для контекста
-    final messages = getMessagesForChat(chatId);
-    final apiMessages = messages
-        .map((msg) => {'role': msg.role, 'content': msg.content})
-        .toList();
-
     try {
       // Определяем модель на основе настроек чата
       final model = (useDeepThink == true)
           ? 'deepseek-reasoner'
           : 'deepseek-chat';
 
-      // Отправляем запрос к API
+      // Отправляем запрос к API с полной историей
       final response = await _apiService.sendChatMessage(
         messages: apiMessages,
         model: model,
@@ -134,6 +143,7 @@ class ChatRepository {
         frequencyPenalty: 0.0,
         presencePenalty: 0.0,
         topP: 1.0,
+        useWebSearch: useWebSearch ?? false,
       );
 
       // Сохраняем ответ ассистента

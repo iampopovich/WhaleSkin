@@ -22,6 +22,7 @@ class DeepSeekApiService {
     double frequencyPenalty = 0.0,
     double presencePenalty = 0.0,
     double topP = 1.0,
+    bool useWebSearch = false,
   }) async {
     try {
       // Добавляем системный промпт в начало, если он есть
@@ -43,6 +44,7 @@ class DeepSeekApiService {
         'stream': false,
         'tool_choice': 'none',
         'logprobs': false,
+        if (useWebSearch) 'web_search': true,
         if (stopSequences.isNotEmpty) 'stop': stopSequences,
       };
 

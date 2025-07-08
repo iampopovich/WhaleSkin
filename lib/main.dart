@@ -49,12 +49,7 @@ class AppRouter extends StatelessWidget {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
         if (state is ChatLoading) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF1E1E2E),
-            body: Center(
-              child: CircularProgressIndicator(color: Color(0xFF4F9CF9)),
-            ),
-          );
+          return const SizedBox.shrink(); // Заглушка вместо loading UI
         }
 
         if (state is ChatLoaded) {

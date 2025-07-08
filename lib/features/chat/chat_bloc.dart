@@ -61,6 +61,8 @@ class TestApiKey extends ChatEvent {
   TestApiKey(this.apiKey);
 }
 
+class CancelMessage extends ChatEvent {}
+
 // States
 abstract class ChatState {}
 
@@ -73,12 +75,14 @@ class ChatLoaded extends ChatState {
   final Chat? selectedChat;
   final List<Message> messages;
   final bool hasApiKey;
+  final bool isWaitingForResponse;
 
   ChatLoaded({
     required this.chats,
     this.selectedChat,
     required this.messages,
     required this.hasApiKey,
+    this.isWaitingForResponse = false,
   });
 
   ChatLoaded copyWith({
@@ -86,12 +90,14 @@ class ChatLoaded extends ChatState {
     Chat? selectedChat,
     List<Message>? messages,
     bool? hasApiKey,
+    bool? isWaitingForResponse,
   }) {
     return ChatLoaded(
       chats: chats ?? this.chats,
       selectedChat: selectedChat ?? this.selectedChat,
       messages: messages ?? this.messages,
       hasApiKey: hasApiKey ?? this.hasApiKey,
+      isWaitingForResponse: isWaitingForResponse ?? this.isWaitingForResponse,
     );
   }
 
@@ -103,11 +109,17 @@ class ChatLoaded extends ChatState {
           _listEquals(chats, other.chats) &&
           selectedChat == other.selectedChat &&
           _listEquals(messages, other.messages) &&
-          hasApiKey == other.hasApiKey;
+          hasApiKey == other.hasApiKey &&
+          isWaitingForResponse == other.isWaitingForResponse;
 
   @override
-  int get hashCode =>
-      Object.hash(chats.length, selectedChat, messages.length, hasApiKey);
+  int get hashCode => Object.hash(
+    chats.length,
+    selectedChat,
+    messages.length,
+    hasApiKey,
+    isWaitingForResponse,
+  );
 
   bool _listEquals<T>(List<T>? a, List<T>? b) {
     if (a == null) return b == null;
@@ -184,6 +196,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<UpdateChatSettings>(_onUpdateChatSettings);
     on<RenameChat>(_onRenameChat);
     on<TestApiKey>(_onTestApiKey);
+    on<CancelMessage>(_onCancelMessage);
   }
 
   Future<void> _onLoadChats(LoadChats event, Emitter<ChatState> emit) async {
@@ -193,7 +206,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final chats = _repository.getAllChats();
       final hasApiKey = await _repository.hasApiKey;
 
-      emit(ChatLoaded(chats: chats, messages: [], hasApiKey: hasApiKey));
+      emit(
+        ChatLoaded(
+          chats: chats,
+          messages: [],
+          hasApiKey: hasApiKey,
+          isWaitingForResponse: false,
+        ),
+      );
     } catch (e) {
       emit(ChatError('Ошибка загрузки чатов: $e'));
     }
@@ -240,18 +260,31 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (state is! ChatLoaded) return;
 
     final currentState = state as ChatLoaded;
-    if (currentState.selectedChat == null) return;
+    if (currentState.selectedChat == null ||
+        currentState.isWaitingForResponse) {
+      return;
+    }
 
+    // Создаем сообщение пользователя
+    final userMessage = Message.user(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: event.content,
+      chatId: currentState.selectedChat!.id,
+    );
+
+    // Добавляем сообщение пользователя сразу в локальный список
+    final updatedMessages = [...currentState.messages, userMessage];
+
+    // Обновляем состояние с новым сообщением и флагом ожидания
     emit(
-      MessageSending(
-        chats: currentState.chats,
-        selectedChat: currentState.selectedChat,
-        messages: currentState.messages,
-        hasApiKey: currentState.hasApiKey,
+      currentState.copyWith(
+        messages: updatedMessages,
+        isWaitingForResponse: true,
       ),
     );
 
     try {
+      // Отправляем сообщение через репозиторий
       await _repository.sendMessage(
         chatId: currentState.selectedChat!.id,
         content: event.content,
@@ -261,8 +294,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         useDeepThink: currentState.selectedChat!.useDeepThink,
       );
 
-      // Обновляем сообщения и чаты
-      final updatedMessages = _repository.getMessagesForChat(
+      // Получаем обновленные сообщения (включая ответ ИИ)
+      final finalMessages = _repository.getMessagesForChat(
         currentState.selectedChat!.id,
       );
       final updatedChats = _repository.getAllChats();
@@ -271,11 +304,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         ChatLoaded(
           chats: updatedChats,
           selectedChat: currentState.selectedChat,
-          messages: updatedMessages,
+          messages: finalMessages,
           hasApiKey: currentState.hasApiKey,
+          isWaitingForResponse: false,
         ),
       );
     } catch (e) {
+      // В случае ошибки возвращаем состояние без ответа ИИ
+      emit(
+        currentState.copyWith(
+          messages: updatedMessages,
+          isWaitingForResponse: false,
+        ),
+      );
       emit(ChatError('Ошибка отправки сообщения: $e'));
     }
   }
@@ -332,7 +373,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final success = await _repository.setApiKey(event.apiKey);
       if (success) {
         final chats = _repository.getAllChats();
-        emit(ChatLoaded(chats: chats, messages: [], hasApiKey: true));
+        emit(
+          ChatLoaded(
+            chats: chats,
+            messages: [],
+            hasApiKey: true,
+            isWaitingForResponse: false,
+          ),
+        );
       } else {
         emit(ChatError('Неверный API ключ'));
       }
@@ -449,5 +497,18 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     } catch (e) {
       emit(ApiKeyTestFailed('Ошибка подключения к серверу DeepSeek'));
     }
+  }
+
+  Future<void> _onCancelMessage(
+    CancelMessage event,
+    Emitter<ChatState> emit,
+  ) async {
+    if (state is! ChatLoaded) return;
+
+    final currentState = state as ChatLoaded;
+    if (!currentState.isWaitingForResponse) return;
+
+    // Просто убираем флаг ожидания ответа
+    emit(currentState.copyWith(isWaitingForResponse: false));
   }
 }

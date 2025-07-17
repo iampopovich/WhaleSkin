@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat_core;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import '../../core/chat_ui_adapter.dart';
+import '../../core/theme_provider.dart';
 import '../../data/models/message.dart' as app_models;
 import '../../data/models/chat.dart' as app_chat;
 import '../chat/chat_bloc.dart';
@@ -70,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E2E),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: BlocListener<ChatBloc, ChatState>(
         listener: (context, state) {
           if (state is ChatExported) {
@@ -107,17 +108,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return Row(
                 children: [
-                  // Боковая панель с чатами
-                  Container(
-                    width: 300,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF2A2A3A),
-                      border: Border(
-                        right: BorderSide(color: Color(0xFF3A3A4A), width: 1),
-                      ),
-                    ),
-                    child: _buildChatSidebar(state),
-                  ),
+                  // Боковая панель с чатами (адаптивная)
+                  MediaQuery.of(context).size.width > 800
+                      ? Container(
+                          width: 300,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            border: Border(
+                              right: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          child: _buildChatSidebar(state),
+                        )
+                      : const SizedBox.shrink(),
                   // Основная область чата
                   Expanded(
                     child: state.selectedChat != null
@@ -166,6 +172,37 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
+      // Плавающая кнопка для мобильных устройств
+      floatingActionButton: MediaQuery.of(context).size.width <= 800
+          ? BlocBuilder<ChatBloc, ChatState>(
+              builder: (context, state) {
+                if (state is ChatLoaded) {
+                  return FloatingActionButton(
+                    onPressed: () {
+                      _showMobileChatList(context, state);
+                    },
+                    backgroundColor: const Color(0xFF4F9CF9),
+                    child: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            )
+          : null,
+    );
+  }
+
+  void _showMobileChatList(BuildContext context, ChatLoaded state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF2A2A3A),
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: _buildChatSidebar(state),
+      ),
     );
   }
 
@@ -175,31 +212,106 @@ class _HomeScreenState extends State<HomeScreen> {
         // Заголовок и кнопка создания чата
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Color(0xFF2A2A3A),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
             border: Border(
-              bottom: BorderSide(color: Color(0xFF3A3A4A), width: 1),
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
             ),
           ),
           child: Row(
             children: [
-              const Text(
+              Text(
                 'Чаты',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF1E293B),
                 ),
               ),
               const Spacer(),
               IconButton(
                 onPressed: () {
+                  try {
+                    final themeManager = ThemeProvider.themeManagerOf(context);
+                    themeManager.toggleTheme();
+                  } catch (e) {
+                    // Fallback - попробуем найти провайдер другим способом
+                    final themeProvider = ThemeProvider.of(context);
+                    if (themeProvider != null) {
+                      themeProvider.themeManager.toggleTheme();
+                    }
+                  }
+                },
+                icon: Icon(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Icons.light_mode
+                      : Icons.dark_mode,
+                  color: const Color(0xFF4F9CF9),
+                ),
+                tooltip: Theme.of(context).brightness == Brightness.dark
+                    ? 'Светлая тема'
+                    : 'Темная тема',
+              ),
+              IconButton(
+                onPressed: () {
                   context.read<ChatBloc>().add(CreateChat());
                 },
                 icon: const Icon(Icons.add, color: Color(0xFF4F9CF9)),
-                tooltip: 'Новый чат',
+                tooltip: 'Новый чат (Ctrl+N)',
               ),
             ],
+          ),
+        ),
+        // Поиск чатов
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
+            ),
+          ),
+          child: TextField(
+            onChanged: (value) {
+              // TODO: Implement chat search filtering
+            },
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : const Color(0xFF1E293B),
+            ),
+            decoration: InputDecoration(
+              hintText: 'Поиск чатов...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF64748B),
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF64748B),
+              ),
+              filled: true,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
           ),
         ),
         // Список чатов
@@ -210,7 +322,8 @@ class _HomeScreenState extends State<HomeScreen> {
               final chat = state.chats[index];
               final isSelected = state.selectedChat?.id == chat.id;
 
-              return Container(
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -235,8 +348,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     chat.title,
                     style: TextStyle(
                       color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF94A3B8),
+                          ? (Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : const Color(0xFF1E293B))
+                          : (Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF475569)),
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.normal,
@@ -248,8 +365,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     _formatTime(chat.lastMessageAt),
                     style: TextStyle(
                       color: isSelected
-                          ? const Color(0xFF94A3B8)
-                          : const Color(0xFF64748B),
+                          ? (Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B))
+                          : (Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8)),
                       fontSize: 12,
                     ),
                   ),
@@ -257,8 +378,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icon(
                       Icons.more_vert,
                       color: isSelected
-                          ? const Color(0xFF94A3B8)
-                          : const Color(0xFF64748B),
+                          ? (Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B))
+                          : (Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8)),
                     ),
                     onSelected: (action) {
                       switch (action) {
@@ -346,75 +471,79 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Color(0xFF94A3B8)),
-                onSelected: (action) {
-                  if (state.selectedChat != null) {
-                    switch (action) {
-                      case 'settings':
-                        _showChatSettings(context, state.selectedChat!);
-                        break;
-                      case 'export_json':
-                        context.read<ChatBloc>().add(
-                          ExportChat(state.selectedChat!.id, 'json'),
-                        );
-                        break;
-                      case 'export_md':
-                        context.read<ChatBloc>().add(
-                          ExportChat(state.selectedChat!.id, 'markdown'),
-                        );
-                        break;
-                      case 'export_pdf':
-                        context.read<ChatBloc>().add(
-                          ExportChat(state.selectedChat!.id, 'pdf'),
-                        );
-                        break;
+              AnimatedOpacity(
+                opacity: 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Color(0xFF94A3B8)),
+                  onSelected: (action) {
+                    if (state.selectedChat != null) {
+                      switch (action) {
+                        case 'settings':
+                          _showChatSettings(context, state.selectedChat!);
+                          break;
+                        case 'export_json':
+                          context.read<ChatBloc>().add(
+                            ExportChat(state.selectedChat!.id, 'json'),
+                          );
+                          break;
+                        case 'export_md':
+                          context.read<ChatBloc>().add(
+                            ExportChat(state.selectedChat!.id, 'markdown'),
+                          );
+                          break;
+                        case 'export_pdf':
+                          context.read<ChatBloc>().add(
+                            ExportChat(state.selectedChat!.id, 'pdf'),
+                          );
+                          break;
+                      }
                     }
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        Icon(Icons.settings, size: 20),
-                        SizedBox(width: 8),
-                        Text('Настройки чата'),
-                      ],
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings, size: 20),
+                          SizedBox(width: 8),
+                          Text('Настройки чата'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'export_json',
-                    child: Row(
-                      children: [
-                        Icon(Icons.download, size: 20),
-                        SizedBox(width: 8),
-                        Text('Экспорт в JSON'),
-                      ],
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'export_json',
+                      child: Row(
+                        children: [
+                          Icon(Icons.download, size: 20),
+                          SizedBox(width: 8),
+                          Text('Экспорт в JSON'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'export_md',
-                    child: Row(
-                      children: [
-                        Icon(Icons.description, size: 20),
-                        SizedBox(width: 8),
-                        Text('Экспорт в Markdown'),
-                      ],
+                    const PopupMenuItem(
+                      value: 'export_md',
+                      child: Row(
+                        children: [
+                          Icon(Icons.description, size: 20),
+                          SizedBox(width: 8),
+                          Text('Экспорт в Markdown'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'export_pdf',
-                    child: Row(
-                      children: [
-                        Icon(Icons.picture_as_pdf, size: 20),
-                        SizedBox(width: 8),
-                        Text('Экспорт в PDF'),
-                      ],
+                    const PopupMenuItem(
+                      value: 'export_pdf',
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf, size: 20),
+                          SizedBox(width: 8),
+                          Text('Экспорт в PDF'),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -424,49 +553,57 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               // Индикатор ожидания ответа
-              if (state.isWaitingForResponse)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3A3A4A),
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFF4A4A5A), width: 1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF4F9CF9),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: state.isWaitingForResponse ? 60 : 0,
+                child: state.isWaitingForResponse
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Генерирую ответ...',
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 14,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF3A3A4A),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Color(0xFF4A4A5A),
+                              width: 1,
+                            ),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          context.read<ChatBloc>().add(CancelMessage());
-                        },
-                        child: const Text(
-                          'Отменить',
-                          style: TextStyle(color: Color(0xFF4F9CF9)),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF4F9CF9),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Генерирую ответ...',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () {
+                                context.read<ChatBloc>().add(CancelMessage());
+                              },
+                              child: const Text(
+                                'Отменить',
+                                style: TextStyle(color: Color(0xFF4F9CF9)),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
+                      )
+                    : null,
+              ),
               // Сам чат
               Expanded(
                 child: Chat(

@@ -5,7 +5,9 @@ import '../models/chat.dart';
 import '../models/message.dart';
 import '../services/deepseek_api_service.dart';
 import '../services/storage_service.dart';
-import '../services/export_service.dart';
+import '../../features/export/services/export_service.dart';
+import '../../features/export/models/export_format.dart';
+import '../../features/export/models/export_models.dart';
 
 class ChatRepository {
   late DeepSeekApiService _apiService;
@@ -65,6 +67,10 @@ class ChatRepository {
 
   List<Chat> getAllChats() {
     return StorageService.getChatsSorted();
+  }
+
+  Chat? getChatById(String chatId) {
+    return StorageService.getChat(chatId);
   }
 
   Future<void> updateChat(Chat chat) async {
@@ -241,7 +247,9 @@ class ChatRepository {
       throw Exception('Chat not found');
     }
 
-    return await ExportService.exportChatToJson(chat, messages);
+    final options = ExportOptions(format: ExportFormat.json);
+    final result = await ExportService.exportChat(chat, messages, options);
+    return result.filePath;
   }
 
   Future<String> exportChatToMarkdownFile(String chatId) async {
@@ -252,7 +260,9 @@ class ChatRepository {
       throw Exception('Chat not found');
     }
 
-    return await ExportService.exportChatToMarkdown(chat, messages);
+    final options = ExportOptions(format: ExportFormat.markdown);
+    final result = await ExportService.exportChat(chat, messages, options);
+    return result.filePath;
   }
 
   Future<String> exportChatToPdfFile(String chatId) async {
@@ -263,7 +273,9 @@ class ChatRepository {
       throw Exception('Chat not found');
     }
 
-    return await ExportService.exportChatToPdf(chat, messages);
+    final options = ExportOptions(format: ExportFormat.pdf);
+    final result = await ExportService.exportChat(chat, messages, options);
+    return result.filePath;
   }
 
   // Update chat settings

@@ -38,12 +38,6 @@ class SetApiKey extends ChatEvent {
   SetApiKey(this.apiKey);
 }
 
-class ExportChat extends ChatEvent {
-  final String chatId;
-  final String format; // 'json', 'markdown', 'pdf'
-  ExportChat(this.chatId, this.format);
-}
-
 class UpdateChatSettings extends ChatEvent {
   final String chatId;
   final Map<String, dynamic> updates;
@@ -145,29 +139,6 @@ class MessageSending extends ChatLoaded {
   });
 }
 
-class ChatExporting extends ChatLoaded {
-  ChatExporting({
-    required super.chats,
-    super.selectedChat,
-    required super.messages,
-    required super.hasApiKey,
-  });
-}
-
-class ChatExported extends ChatLoaded {
-  final String filePath;
-  final String format;
-
-  ChatExported({
-    required this.filePath,
-    required this.format,
-    required super.chats,
-    super.selectedChat,
-    required super.messages,
-    required super.hasApiKey,
-  });
-}
-
 class ApiKeyTesting extends ChatState {}
 
 class ApiKeyTestSuccess extends ChatState {
@@ -192,12 +163,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ToggleChatPin>(_onToggleChatPin);
     on<DeleteChat>(_onDeleteChat);
     on<SetApiKey>(_onSetApiKey);
-    on<ExportChat>(_onExportChat);
     on<UpdateChatSettings>(_onUpdateChatSettings);
     on<RenameChat>(_onRenameChat);
     on<TestApiKey>(_onTestApiKey);
     on<CancelMessage>(_onCancelMessage);
   }
+
+  ChatRepository get repository => _repository;
 
   Future<void> _onLoadChats(LoadChats event, Emitter<ChatState> emit) async {
     emit(ChatLoading());
@@ -387,52 +359,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       }
     } catch (e) {
       emit(ChatError('Ошибка сохранения API ключа: $e'));
-    }
-  }
-
-  Future<void> _onExportChat(ExportChat event, Emitter<ChatState> emit) async {
-    if (state is! ChatLoaded) return;
-
-    final currentState = state as ChatLoaded;
-
-    emit(
-      ChatExporting(
-        chats: currentState.chats,
-        selectedChat: currentState.selectedChat,
-        messages: currentState.messages,
-        hasApiKey: currentState.hasApiKey,
-      ),
-    );
-
-    try {
-      String filePath;
-
-      switch (event.format) {
-        case 'json':
-          filePath = await _repository.exportChatToJsonFile(event.chatId);
-          break;
-        case 'markdown':
-          filePath = await _repository.exportChatToMarkdownFile(event.chatId);
-          break;
-        case 'pdf':
-          filePath = await _repository.exportChatToPdfFile(event.chatId);
-          break;
-        default:
-          throw Exception('Неподдерживаемый формат экспорта');
-      }
-
-      emit(
-        ChatExported(
-          filePath: filePath,
-          format: event.format,
-          chats: currentState.chats,
-          selectedChat: currentState.selectedChat,
-          messages: currentState.messages,
-          hasApiKey: currentState.hasApiKey,
-        ),
-      );
-    } catch (e) {
-      emit(ChatError('Ошибка экспорта: $e'));
     }
   }
 

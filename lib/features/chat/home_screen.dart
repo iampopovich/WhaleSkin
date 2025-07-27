@@ -7,6 +7,7 @@ import '../../core/theme_provider.dart';
 import '../../data/models/message.dart' as app_models;
 import '../../data/models/chat.dart' as app_chat;
 import '../chat/chat_bloc.dart';
+import '../export/export.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,23 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: BlocListener<ChatBloc, ChatState>(
         listener: (context, state) {
-          if (state is ChatExported) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Чат экспортирован в ${state.format.toUpperCase()}',
-                ),
-                backgroundColor: const Color(0xFF4F9CF9),
-                action: SnackBarAction(
-                  label: 'Открыть',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    // TODO: Open file
-                  },
-                ),
-              ),
-            );
-          }
+          // Можно добавить другие слушатели, если нужно
         },
         child: BlocBuilder<ChatBloc, ChatState>(
           builder: (context, state) {
@@ -483,19 +468,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           _showChatSettings(context, state.selectedChat!);
                           break;
                         case 'export_json':
-                          context.read<ChatBloc>().add(
-                            ExportChat(state.selectedChat!.id, 'json'),
-                          );
-                          break;
                         case 'export_md':
-                          context.read<ChatBloc>().add(
-                            ExportChat(state.selectedChat!.id, 'markdown'),
-                          );
-                          break;
                         case 'export_pdf':
-                          context.read<ChatBloc>().add(
-                            ExportChat(state.selectedChat!.id, 'pdf'),
-                          );
+                          _showExportDialog(context, state.selectedChat!);
                           break;
                       }
                     }
@@ -674,6 +649,17 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => _RenameChatDialog(
         chat: chat,
         chatBloc: this.context.read<ChatBloc>(),
+      ),
+    );
+  }
+
+  void _showExportDialog(BuildContext context, app_chat.Chat chat) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocProvider(
+        create: (context) =>
+            ExportBloc(chatRepository: context.read<ChatBloc>().repository),
+        child: ExportDialog(chatId: chat.id, chatTitle: chat.title),
       ),
     );
   }
